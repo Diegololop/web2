@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServiFlow - {% block title %}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Estilo general */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        .header-main .navbar {
+            background-color: #0d6efd;
+        }
+
+        .header-main .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .header-main .navbar-brand i {
+            font-size: 1.8rem;
+        }
+
+        .header-main .nav-link {
+            color: white !important;
+            font-size: 1rem;
+            margin-right: 10px;
+        }
+
+        .header-main .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        .header-main .dropdown-menu {
+            background-color: #0d6efd;
+            border: none;
+        }
+
+        .header-main .dropdown-item {
+            color: white;
+        }
+
+        .header-main .dropdown-item:hover {
+            background-color: #0056b3;
+        }
+
+        .footer {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.footer h5 {
+    font-weight: bold;
+    color: white;
+}
+
+.footer p {
+    margin: 0;
+}
+
+.footer .text-muted {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.footer hr {
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.footer .d-flex {
+    display: flex;
+    justify-content: center; /* Centra los bloques de contenido */
+}
+
+.footer .row {
+    justify-content: center; /* Centra toda la fila */
+}
+
+.footer .text-center {
+    text-align: center;
+}
+
+.footer .gap-3 {
+    gap: 10px; /* Espacio entre los iconos y el texto */
+}
+        .hero-section {
+    position: relative;
+    background-image: url('/static/img/producto-taller-mecanico.jpg');
+    background-size: cover;
+    background-position: 50% 65%;
+    background-repeat: no-repeat;
+    color: white;
+    padding: 60px 20px;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.hero-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    filter: blur(4px);
+    z-index: 1;
+}
+
+.hero-section h1, .hero-section p {
+    position: relative;
+    z-index: 2;
+}
+
+.product-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px); /* Efecto hover para tarjetas */
+}
+
+.product-card .card-img-wrapper {
+    height: 200px; /* Ajusta la altura de la imagen para que tenga un tamaño uniforme */
+    overflow: hidden;
+}
+
+.product-card .card-img-wrapper img {
+    object-fit: cover; /* Mantiene la proporción de la imagen sin deformarla */
+    width: 100%;
+    height: 100%;
+}
+
+.product-card .card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.product-card .price-tag {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.product-card .badge.bg-success {
+    font-size: 0.9rem;
+}
+
+.product-card .badge.bg-danger {
+    font-size: 0.9rem;
+}
+
+.category-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 1;
+}
+
+.category-product {
+    background-color: rgba(13, 110, 253, 0.9);
+    color: white;
+}
+
+.price-tag {
+    background: #1e3c72;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+    </style>
+</head>
+<body>
+    <!-- Header con diseño mejorado -->
+    <header class="header-main">
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                    <i class="fas fa-car-mechanic me-2"></i>
+                    <span>ServiFlow</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'home' %}">
+                                <i class="fas fa-home"></i> Inicio
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'service_list_public' %}">
+                                <i class="fas fa-wrench"></i> Servicios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'product_list_public' %}">
+                                <i class="fas fa-shopping-cart"></i> Productos
+                            </a>
+                        </li>
+                        {% if user.is_authenticated %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'dashboard' %}">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a>
+                            </li>
+                            {% if user.is_superuser or user.userprofile.role == 'admin' %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog"></i> Administración
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-center">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'employee_list' %}">
+                                                <i class="fas fa-users"></i> Empleados
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'service_list' %}">
+                                                <i class="fas fa-wrench"></i> Servicios
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'product_list' %}">
+                                                <i class="fas fa-box"></i> Productos
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'work_order_list' %}">
+                                                <i class="fas fa-clipboard-list"></i> Órdenes
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'client_list' %}">
+                                                <i class="fas fa-user-friends"></i> Clientes
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                    </ul>
+                    <ul class="navbar-nav">
+                        {% if user.is_authenticated %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user-circle"></i> {{ user.get_full_name }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'dashboard' %}">
+                                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'login' %}">
+                                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow-1">
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-4 d-flex justify-content-center">
+                <div class="text-center">
+                    <h5>ServiFlow</h5>
+                    <p class="text-muted mb-0">Tu taller mecánico de confianza</p>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex justify-content-center">
+                <div class="text-center">
+                    <h5>Contacto</h5>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <span><i class="fas fa-phone"></i> +56 9 1234 5678</span>
+                        <span><i class="fas fa-envelope"></i> contacto@autoservice.cl</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr class="bg-white my-4">
+        <div class="text-center">
+            <span class="text-white">© 2024 ServiFlow. Todos los derechos reservados.</span>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

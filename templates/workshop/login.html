@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">Iniciar Sesión</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                Nombre de usuario o contraseña incorrectos. Por favor, intente nuevamente.
+                            </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">Nombre de Usuario</label>
+                            {% render_field form.username class="form-control" placeholder="Ingrese su nombre de usuario" %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">Contraseña</label>
+                            {% render_field form.password class="form-control" placeholder="Ingrese su contraseña" %}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                            </button>
+                        </div>
+                    </form>
+                    <hr>
+                    <div class="text-center">
+                        <p>¿No tienes una cuenta? <a href="{% url 'register' %}">Regístrate aquí</a></p>
+                        <p>¿Ya tienes una reserva? <a href="{% url 'activate_account' %}">Activa tu cuenta aquí</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

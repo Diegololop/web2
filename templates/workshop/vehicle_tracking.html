@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Seguimiento de Vehículo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">
+                        <i class="fas fa-car me-2"></i>Estado de tu Vehículo
+                    </h2>
+                </div>
+                <div class="card-body">
+                    {% if work_orders %}
+                        {% for order in work_orders %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5 class="card-title">Orden #{{ order.id }}</h5>
+                                            <p class="mb-1"><strong>Vehículo:</strong> {{ order.vehicle_model }} ({{ order.vehicle_year }})</p>
+                                            <p class="mb-1"><strong>Mecánico:</strong> 
+                                                {% if order.mechanic %}
+                                                    {{ order.mechanic.user.get_full_name }}
+                                                {% else %}
+                                                    <span class="text-muted">No asignado</span>
+                                                {% endif %}
+                                            </p>
+                                            <p class="mb-1"><strong>Fecha estimada:</strong> {{ order.estimated_completion|date:"d/m/Y" }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex flex-column h-100 justify-content-between">
+                                                <div>
+                                                    <h6 class="mb-2">Estado actual:</h6>
+                                                    <span class="badge {% if order.status == 'pending' %}bg-warning
+                                                        {% elif order.status == 'in_progress' %}bg-info
+                                                        {% elif order.status == 'completed' %}bg-success
+                                                        {% else %}bg-danger{% endif %} p-2">
+                                                        {{ order.get_status_display }}
+                                                    </span>
+                                                </div>
+                                                
+                                                {% if order.workordernote_set.exists %}
+                                                    <div class="mt-3">
+                                                        <h6>Última actualización:</h6>
+                                                        <div class="border-start border-primary ps-3">
+                                                            {{ order.workordernote_set.first.note }}
+                                                            <small class="d-block text-muted mt-1">
+                                                                {{ order.workordernote_set.first.created_at|date:"d/m/Y H:i" }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h4>No hay órdenes de trabajo activas</h4>
+                            <p class="text-muted">
+                                No tienes ningún vehículo en servicio en este momento.
+                                {% if not user.is_authenticated %}
+                                    <br>
+                                    <a href="{% url 'login' %}" class="btn btn-primary mt-3">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                                    </a>
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Cliente{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="card-title mb-0">Confirmar Eliminación</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ¿Está seguro que desea eliminar al cliente <strong>{{ client.user.get_full_name }}</strong>?
+                        Esta acción también eliminará todas las órdenes de trabajo y reservas asociadas.
+                    </div>
+
+                    <div class="mt-4">
+                        <h5>Información del Cliente:</h5>
+                        <ul class="list-unstyled">
+                            <li><strong>RUT:</strong> {{ client.rut }}</li>
+                            <li><strong>Email:</strong> {{ client.user.email }}</li>
+                            <li><strong>Teléfono:</strong> {{ client.phone }}</li>
+                            <li><strong>Dirección:</strong> {{ client.address }}</li>
+                            <li><strong>Órdenes de trabajo:</strong> {{ client.workorder_set.count }}</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'client_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Eliminar Cliente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

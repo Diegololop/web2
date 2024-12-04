@@ -1,0 +1,598 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if user.is_authenticated and not user.is_superuser and not user.userprofile %}
+        <!-- Dashboard de Cliente -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="card-title mb-0">
+                            <i class="fas fa-car me-2"></i>Estado de tus Vehículos
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        {% if work_orders %}
+                            {% for order in work_orders %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h5 class="card-title">Orden #{{ order.id }}</h5>
+                                                <p class="mb-1"><strong>Vehículo:</strong> {{ order.vehicle_model }} ({{ order.vehicle_year }})</p>
+                                                <p class="mb-1"><strong>Mecánico:</strong> 
+                                                    {% if order.mechanic %}
+                                                        {{ order.mechanic.user.get_full_name }}
+                                                    {% else %}
+                                                        <span class="text-muted">No asignado</span>
+                                                    {% endif %}
+                                                </p>
+                                                <p class="mb-1"><strong>Fecha estimada:</strong> {{ order.estimated_completion|date:"d/m/Y" }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="d-flex flex-column h-100 justify-content-between">
+                                                    <div>
+                                                        <h6 class="mb-2">Estado actual:</h6>
+                                                        <span class="badge {% if order.status == 'pending' %}bg-warning
+                                                            {% elif order.status == 'in_progress' %}bg-info
+                                                            {% elif order.status == 'completed' %}bg-success
+                                                            {% else %}bg-danger{% endif %} p-2">
+                                                            {{ order.get_status_display }}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {% if order.workordernote_set.exists %}
+                                                        <div class="mt-3">
+                                                            <h6>Última actualización:</h6>
+                                                            <div class="border-start border-primary ps-3">
+                                                                {{ order.workordernote_set.first.note }}
+                                                                <small class="d-block text-muted mt-1">
+                                                                    {{ order.workordernote_set.first.created_at|date:"d/m/Y H:i" }}
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                <h4>No hay órdenes de trabajo activas</h4>
+                                <p class="text-muted">No tienes ningún vehículo en servicio en este momento.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservas -->
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="card-title mb-0">
+                            <i class="fas fa-calendar me-2"></i>Tus Reservas
+                        </h2>
+                        <a href="{% url 'reservation_form' %}" class="btn btn-light">
+                            <i class="fas fa-plus me-2"></i>Nueva Reserva
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if reservations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Servicios</th>
+                                        <th>Duración</th>
+                                        <th>Total</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reservation in reservations %}
+                                        <tr>
+                                            <td>{{ reservation.service_date|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                {% for service in reservation.services.all %}
+                                                    {{ service.name }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </td>
+                                            <td>{{ reservation.total_duration }} min</td>
+                                            <td>${{ reservation.total_price|floatformat:0|intcomma }}</td>
+                                            <td>
+                                                <span class="badge {% if reservation.status == 'pending' %}bg-warning
+                                                    {% elif reservation.status == 'confirmed' %}bg-success
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {{ reservation.get_status_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                            <h4>No tienes reservas</h4>
+                            <p class="text-muted">
+                                No tienes ninguna reserva programada.
+                                <a href="{% url 'reservation_form' %}" class="btn btn-primary mt-3">
+                                    <i class="fas fa-plus me-2"></i>Crear Nueva Reserva
+                                </a>
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif user.is_superuser or user_profile.role == 'admin' %}
+        <!-- Dashboard de Administrador -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">Clientes</h6>
+                                <h2 class="my-2">{{ clients.count }}</h2>
+                            </div>
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'client_list' %}" class="btn btn-light btn-sm w-100">
+                                <i class="fas fa-list me-2"></i>Ver Todos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">Servicios</h6>
+                                <h2 class="my-2">{{ services.count }}</h2>
+                            </div>
+                            <i class="fas fa-wrench fa-2x"></i>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'service_list' %}" class="btn btn-light btn-sm w-100">
+                                <i class="fas fa-list me-2"></i>Ver Todos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">Órdenes Activas</h6>
+                                <h2 class="my-2">{{ work_orders.count }}</h2>
+                            </div>
+                            <i class="fas fa-clipboard-list fa-2x"></i>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'work_order_list' %}" class="btn btn-light btn-sm w-100">
+                                <i class="fas fa-list me-2"></i>Ver Todas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-warning text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">Reservas Pendientes</h6>
+                                <h2 class="my-2">{{ reservations.count }}</h2>
+                            </div>
+                            <i class="fas fa-calendar-alt fa-2x"></i>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'reservation_list' %}" class="btn btn-light btn-sm w-100">
+                                <i class="fas fa-list me-2"></i>Ver Todas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimas Órdenes de Trabajo -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Últimas Órdenes de Trabajo</h3>
+                    <a href="{% url 'work_order_list' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-list me-2"></i>Ver Todas
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Vehículo</th>
+                                <th>Estado</th>
+                                <th>Fecha Estimada</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in work_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.client.user.get_full_name }}</td>
+                                    <td>{{ order.vehicle_model }}</td>
+                                    <td>
+                                        <span class="badge {% if order.status == 'pending' %}bg-warning
+                                            {% elif order.status == 'in_progress' %}bg-info
+                                            {% elif order.status == 'completed' %}bg-success
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ order.estimated_completion|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'work_order_edit' order.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No hay órdenes de trabajo registradas.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimas Reservas -->
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Últimas Reservas</h3>
+                    <a href="{% url 'reservation_list' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-list me-2"></i>Ver Todas
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th>Servicios</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in reservations %}
+                                <tr>
+                                    <td>{{ reservation.client.user.get_full_name }}</td>
+                                    <td>{{ reservation.service_date|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% for service in reservation.services.all %}
+                                            {{ service.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if reservation.status == 'pending' %}bg-warning
+                                            {% elif reservation.status == 'confirmed' %}bg-success
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ reservation.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'reservation_edit' reservation.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No hay reservas registradas.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    {% elif user_profile.role == 'mechanic' %}
+        <!-- Dashboard de Mecánico -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="card-title mb-0">
+                            <i class="fas fa-wrench me-2"></i>Mis Órdenes de Trabajo
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Cliente</th>
+                                        <th>Vehículo</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Estimada</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in work_orders %}
+                                        <tr>
+                                            <td>#{{ order.id }}</td>
+                                            <td>{{ order.client.user.get_full_name }}</td>
+                                            <td>{{ order.vehicle_model }} ({{ order.vehicle_year }})</td>
+                                            <td>
+                                                <span class="badge {% if order.status == 'pending' %}bg-warning
+                                                    {% elif order.status == 'in_progress' %}bg-info
+                                                    {% elif order.status == 'completed' %}bg-success
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ order.estimated_completion|date:"d/m/Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'work_order_edit' order.id %}" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-edit"></i> Actualizar
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                                                    <p>No tienes órdenes de trabajo asignadas.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% elif user_profile.role == 'receptionist' %}
+        <!-- Dashboard de Recepcionista -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">Reservas Pendientes</h6>
+                                <h2 class="my-2">{{ reservations.count }}</h2>
+                            </div>
+                            <i class="fas fa-calendar-alt fa-2x"></i>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'reservation_list' %}" class="btn btn-light btn-sm w-100">
+                                <i class="fas fa-list me-2"></i>Ver Todas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">Órdenes Activas</h6>
+                                <h2 class="my-2">{{ work_orders.count }}</h2>
+                            </div>
+                            <i class="fas fa-clipboard-list fa-2x"></i>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'work_order_list' %}" class="btn btn-light btn-sm w-100">
+                                <i class="fas fa-list me-2"></i>Ver Todas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0">Clientes</h6>
+                                <h2 class="my-2">{{ clients.count }}</h2>
+                            </div>
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'client_list' %}" class="btn btn-light btn-sm w-100">
+                                <i class="fas fa-list me-2"></i>Ver Todos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservas del Día -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Reservas del Día</h3>
+                    <a href="{% url 'reservation_form' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>Nueva Reserva
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Cliente</th>
+                                <th>Servicios</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in reservations %}
+                                <tr>
+                                    <td>{{ reservation.service_date|date:"H:i" }}</td>
+                                    <td>{{ reservation.client.user.get_full_name }}</td>
+                                    <td>
+                                        {% for service in reservation.services.all %}
+                                            {{ service.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if reservation.status == 'pending' %}bg-warning
+                                            {% elif reservation.status == 'confirmed' %}bg-success
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ reservation.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'reservation_edit' reservation.id %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-calendar fa-3x mb-3"></i>
+                                            <p>No hay reservas para hoy.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Órdenes de Trabajo Activas -->
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Órdenes de Trabajo Activas</h3>
+                    <a href="{% url 'work_order_add' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>Nueva Orden
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Vehículo</th>
+                                <th>Mecánico</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in work_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.client.user.get_full_name }}</td>
+                                    <td>{{ order.vehicle_model }}</td>
+                                    <td>
+                                        {% if order.mechanic %}
+                                            {{ order.mechanic.user.get_full_name }}
+                                        {% else %}
+                                            <span class="text-muted">No asignado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if order.status == 'pending' %}bg-warning
+                                            {% elif order.status == 'in_progress' %}bg-info
+                                            {% elif order.status == 'completed' %}bg-success
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'work_order_edit' order.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                                            <p>No hay órdenes de trabajo activas.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

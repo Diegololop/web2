@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Órdenes de Trabajo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Órdenes de Trabajo</h1>
+        <a href="{% url 'work_order_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nueva Orden
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Vehículo</th>
+                            <th>Estado</th>
+                            <th>Mecánico</th>
+                            <th>Fecha Estimada</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in work_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>
+                                    {{ order.client.user.get_full_name }}
+                                    <br>
+                                    <small class="text-muted">RUT: {{ order.client.rut }}</small>
+                                </td>
+                                <td>{{ order.vehicle_model }} ({{ order.vehicle_year }})</td>
+                                <td>
+                                    <span class="badge {% if order.status == 'pending' %}bg-warning
+                                        {% elif order.status == 'in_progress' %}bg-info
+                                        {% elif order.status == 'completed' %}bg-success
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ order.get_status_display }}
+                                        {% if order.status == 'cancelled' %}
+                                            {% for note in order.workordernote_set.all %}
+                                                {% if note.is_cancel_reason %}
+                                                    <i class="fas fa-exclamation-circle ms-1" 
+                                                       data-bs-toggle="tooltip" 
+                                                       data-bs-placement="right" 
+                                                       data-bs-html="true"
+                                                       title="<strong>Motivo de cancelación:</strong><br>{{ note.note }}"></i>
+                                                    {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if order.mechanic %}
+                                        {{ order.mechanic.user.get_full_name }}
+                                    {% else %}
+                                        <span class="text-muted">No asignado</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ order.estimated_completion|date:"d/m/Y" }}</td>
+                                <td>
+                                    <a href="{% url 'work_order_edit' order.id %}" class="btn btn-sm btn-info" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-clipboard-list fa-2x mb-3"></i>
+                                        <p>No hay órdenes de trabajo registradas.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar todos los tooltips con HTML habilitado
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            html: true
+        })
+    });
+});
+</script>
+{% endblock %}

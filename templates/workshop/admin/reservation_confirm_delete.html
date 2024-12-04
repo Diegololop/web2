@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Cancelar Reserva{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="card-title mb-0">Confirmar Cancelación</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ¿Está seguro que desea cancelar esta reserva?
+                    </div>
+
+                    <div class="mt-4">
+                        <h5>Detalles de la Reserva:</h5>
+                        <ul class="list-unstyled">
+                            <li><strong>Cliente:</strong> {{ reservation.client.user.get_full_name }}</li>
+                            <li><strong>Fecha:</strong> {{ reservation.service_date|date:"d/m/Y H:i" }}</li>
+                            <li><strong>Servicios:</strong> 
+                                {% for service in reservation.services.all %}
+                                    {{ service.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </li>
+                            <li><strong>Estado:</strong> {{ reservation.get_status_display }}</li>
+                            <li><strong>Duración Total:</strong> {{ reservation.total_duration }} minutos</li>
+                            <li><strong>Precio Total:</strong> ${{ reservation.total_price|floatformat:0 }}</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="cancel_reason" class="form-label">Motivo de la cancelación:</label>
+                            <textarea name="cancel_reason" id="cancel_reason" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'reservation_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-times"></i> Cancelar Reserva
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

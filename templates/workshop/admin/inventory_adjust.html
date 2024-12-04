@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajustar Stock{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">Ajustar Stock - {{ product.name }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Información del Producto</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Stock Actual:</dt>
+                            <dd class="col-sm-8">{{ product.stock }}</dd>
+                            <dt class="col-sm-4">Descripción:</dt>
+                            <dd class="col-sm-8">{{ product.description }}</dd>
+                        </dl>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Ajuste</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="adjustment" id="add" value="add" checked>
+                                <label class="btn btn-outline-success" for="add">
+                                    <i class="fas fa-plus"></i> Entrada
+                                </label>
+                                <input type="radio" class="btn-check" name="adjustment" id="remove" value="remove">
+                                <label class="btn btn-outline-danger" for="remove">
+                                    <i class="fas fa-minus"></i> Salida
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Cantidad</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" 
+                                   min="1" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Motivo del Ajuste</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" required
+                                      placeholder="Explique el motivo del ajuste de inventario..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'inventory_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Ajuste
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity');
+    const removeRadio = document.getElementById('remove');
+    const currentStock = {{ product.stock }};
+
+    function updateMaxQuantity() {
+        if (removeRadio.checked) {
+            quantityInput.max = currentStock;
+        } else {
+            quantityInput.removeAttribute('max');
+        }
+    }
+
+    document.querySelectorAll('input[name="adjustment"]').forEach(radio => {
+        radio.addEventListener('change', updateMaxQuantity);
+    });
+
+    updateMaxQuantity();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% load humanize %}
+
+{% block title %}Nueva Reserva{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Formulario principal -->
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">Nueva Reserva</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario para agregar servicios -->
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row align-items-end">
+                            <div class="col">
+                                <label class="form-label">Agregar Servasdsadasadicio</label>
+                                {% render_field service_form.service class="form-control" %}
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" name="add_to_cart" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Agregar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Formulario principal de reserva -->
+                    <form method="post" id="reservationForm">
+                        {% csrf_token %}
+                        
+                        {% if not user.is_authenticated %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Como no has iniciado sesión, necesitamos algunos datos adicionales.
+                                Si ya tienes una cuenta, puedes <a href="{% url 'login' %}">iniciar sesión aquí</a>.
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre*</label>
+                                    {% render_field form.first_name %}
+                                    {% if form.first_name.errors %}
+                                        <div class="text-danger">{{ form.first_name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Apellido*</label>
+                                    {% render_field form.last_name %}
+                                    {% if form.last_name.errors %}
+                                        <div class="text-danger">{{ form.last_name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email*</label>
+                                    {% render_field form.email %}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Teléfono*</label>
+                                    {% render_field form.phone %}
+                                    {% if form.phone.errors %}
+                                        <div class="text-danger">{{ form.phone.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">RUT*</label>
+                                {% render_field form.rut %}
+                                {% if form.rut.errors %}
+                                    <div class="text-danger">{{ form.rut.errors.0 }}</div>
+                                {% endif %}
+                                <div class="form-text">Formato: XX.XXX.XXX-X</div>
+                            </div>
+                        {% endif %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha*</label>
+                                {% render_field form.date %}
+                                {% if form.date.errors %}
+                                    <div class="text-danger">{{ form.date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hora*</label>
+                                {% render_field form.time %}
+                                {% if form.time.errors %}
+                                    <div class="text-danger">{{ form.time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Descripción (opcional)</label>
+                            {% render_field form.description %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'home' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" name="create_reservation" class="btn btn-primary" {% if not cart_services %}disabled{% endif %}>
+                                <i class="fas fa-calendar-check"></i> Crear Reserva
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen lateral -->
+        <div class="col-md-4">
+            <div class="card shadow sticky-top" style="top: 1rem;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Servicios Seleccionados
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if cart_services %}
+                        <ul class="list-group list-group-flush">
+                            {% for service in cart_services %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">{{ service.name }}</h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>{{ service.duration }} min
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="mb-2">${{ service.price|floatformat:0|intcomma }}</div>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="service_id" value="{{ service.id }}">
+                                                <button type="submit" name="remove_from_cart" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Duración Total:</span>
+                                <strong>{{ total_duration }} min</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Precio Total:</span>
+                                <strong>${{ total_price|floatformat:0|intcomma }}</strong>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay servicios seleccionados</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar fecha mínima como hoy
+    const dateInput = document.querySelector('input[type="date"]');
+    const timeInput = document.querySelector('input[type="time"]');
+    
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        dateInput.value = dateInput.value || today;
+    }
+    
+    if (timeInput) {
+        timeInput.min = '09:00';
+        timeInput.max = '18:00';
+        timeInput.value = timeInput.value || '09:00';
+    }
+
+    // Validación del formulario
+    const form = document.getElementById('reservationForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (e.submitter && e.submitter.name === 'reservation_form') {
+                const cartServices = document.querySelectorAll('.list-group-item');
+                if (cartServices.length === 0) {
+                    e.preventDefault();
+                    alert('Por favor seleccione al menos un servicio');
+                    return;
+                }
+
+                const date = dateInput.value;
+                const time = timeInput.value;
+                if (!date || !time) {
+                    e.preventDefault();
+                    alert('Por favor seleccione fecha y hora');
+                    return;
+                }
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.sticky-top {
+    z-index: 100;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ action }} Orden de Trabajo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">{{ action }} Orden de Trabajo</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="workOrderForm">
+                        {% csrf_token %}
+                        
+                        <!-- Cliente y Mecánico -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.client.id_for_label }}" class="form-label">Cliente</label>
+                                {% render_field form.client class="form-control" %}
+                                {% if form.client.errors %}
+                                    <div class="text-danger">{{ form.client.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.mechanic.id_for_label }}" class="form-label">Mecánico</label>
+                                {% render_field form.mechanic class="form-control" %}
+                                {% if form.mechanic.errors %}
+                                    <div class="text-danger">{{ form.mechanic.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Modelo y Año del Vehículo -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.vehicle_model.id_for_label }}" class="form-label">Modelo del Vehículo</label>
+                                {% render_field form.vehicle_model class="form-control" %}
+                                {% if form.vehicle_model.errors %}
+                                    <div class="text-danger">{{ form.vehicle_model.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.vehicle_year.id_for_label }}" class="form-label">Año</label>
+                                {% render_field form.vehicle_year class="form-control" %}
+                                {% if form.vehicle_year.errors %}
+                                    <div class="text-danger">{{ form.vehicle_year.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Descripción del Trabajo -->
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Descripción del Trabajo</label>
+                            {% render_field form.description class="form-control" rows="4" %}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Estado y Fecha Estimada de Término -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">Estado</label>
+                                {% render_field form.status class="form-control" %}
+                                {% if form.status.errors %}
+                                    <div class="text-danger">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.estimated_completion.id_for_label }}" class="form-label">Fecha Estimada de Término</label>
+                                <div class="input-group">
+                                    {% render_field form.estimated_completion class="form-control" readonly="readonly" %}
+                                    <button type="button" class="btn btn-outline-primary" onclick="showDateTimePicker()">
+                                        <i class="fas fa-calendar-alt"></i> Seleccionar
+                                    </button>
+                                </div>
+                                {% if form.estimated_completion.errors %}
+                                    <div class="text-danger">{{ form.estimated_completion.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Costo Total -->
+                        <div class="mb-3">
+                            <label for="{{ form.total_cost.id_for_label }}" class="form-label">Costo Total</label>
+                            {% render_field form.total_cost class="form-control" %}
+                            {% if form.total_cost.errors %}
+                                <div class="text-danger">{{ form.total_cost.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botones de Acción -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'work_order_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ action }} Orden de Trabajo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Selección de Fecha y Hora -->
+<div class="modal fade" id="dateTimeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Seleccionar Fecha y Hora
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" id="datePicker" class="form-control" onchange="checkAvailability()">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-center gap-3 mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="badge bg-success me-2">&nbsp;</div>
+                            <small>Disponible</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="badge bg-danger me-2">&nbsp;</div>
+                            <small>No Disponible</small>
+                        </div>
+                    </div>
+                    <div id="timeSlots" class="row g-3">
+                        <!-- Los horarios se cargarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+
+function showDateTimePicker() {
+    const modal = new bootstrap.Modal(document.getElementById('dateTimeModal'));
+    modal.show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fecha mínima como hoy
+    const datePicker = document.getElementById('datePicker');
+    const today = new Date().toISOString().split('T')[0];
+    datePicker.min = today;
+});
+
+function showDateTimePicker() {
+    const modal = new bootstrap.Modal(document.getElementById('dateTimeModal'));
+    modal.show();
+}
+
+function checkAvailability() {
+    const date = document.getElementById('datePicker').value;
+    if (!date) {
+        alert('Por favor seleccione una fecha');
+        return;
+    }
+
+    // Hacer la petición AJAX para verificar disponibilidad
+    fetch(`/management/work-orders/check-availability/?date=${date}`)
+        .then(response => response.json())
+        .then(data => {
+            const timeSlots = document.getElementById('timeSlots');
+            timeSlots.innerHTML = '';
+
+            if (data.time_slots && data.time_slots.length > 0) {
+                data.time_slots.forEach(slot => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-3';
+                    
+                    const cardClass = slot.available ? 'border-success' : 'border-danger opacity-75';
+                    const buttonClass = slot.available ? 'btn-success' : 'btn-danger disabled';
+                    const icon = slot.available ? 'check' : 'times';
+                    
+                    col.innerHTML = `
+                        <div class="card ${cardClass}">
+                            <div class="card-body text-center p-2">
+                                <h6 class="mb-2">${slot.time}</h6>
+                                ${!slot.available ? `<small class="text-danger">${slot.reason}</small><br>` : ''}
+                                <button onclick="selectDateTime('${date}', '${slot.time}')" 
+                                        class="btn btn-sm ${buttonClass}"
+                                        ${!slot.available ? 'disabled' : ''}>
+                                    <i class="fas fa-${icon}"></i>
+                                    ${slot.available ? 'Seleccionar' : 'No Disponible'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    timeSlots.appendChild(col);
+                });
+            } else {
+                timeSlots.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No hay horarios disponibles para esta fecha.
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al verificar disponibilidad');
+        });
+}
+
+function selectDateTime(date, time) {
+    const dateTimeInput = document.querySelector('input[name="estimated_completion"]');
+    const formattedDateTime = `${date}T${time}`;
+    dateTimeInput.value = formattedDateTime;
+    
+    // Cerrar el modal
+    bootstrap.Modal.getInstance(document.getElementById('dateTimeModal')).hide();
+}
+</script>
+{% endblock %}
+{% endblock %}

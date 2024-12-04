@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Productos{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hero Section -->
+    <div class="hero-section text-center mb-5">
+        <h1 class="display-4 mb-3">Nuestros Productos</h1>
+        <p class="lead">Productos de calidad para tu vehículo</p>
+    </div>
+
+    <!-- Lista de Productos (diseño horizontal) -->
+<div class="d-flex flex-wrap gap-3 justify-content-center">
+    {% for product in products %}
+        <div class="card product-card" style="max-width: 300px; flex: 0 0 auto;">
+            <span class="category-badge category-product">Producto</span>
+            {% if product.image %}
+                <div class="card-img-wrapper">
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top img-fluid rounded">
+                </div>
+            {% else %}
+                <div class="text-center pt-4">
+                    <i class="fas fa-box fa-3x text-primary"></i>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">{{ product.description }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="price-tag">${{ product.price|floatformat:0|intcomma }}</span>
+                    {% if product.stock > 0 %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i>Disponible
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-times me-1"></i>Sin Stock
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay productos disponibles en este momento.
+            </div>
+        </div>
+    {% endfor %}
+</div>
+</div>
+
+<style>
+.hero-section {
+    position: relative;
+    background-image: url('/static/img/producto-taller-mecanico.jpg');
+    background-size: cover;
+    background-position: 50% 65%;
+    background-repeat: no-repeat;
+    color: white;
+    padding: 60px 20px;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.hero-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    filter: blur(4px);
+    z-index: 1;
+}
+
+.hero-section h1, .hero-section p {
+    position: relative;
+    z-index: 2;
+}
+
+.product-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px); /* Efecto hover para tarjetas */
+}
+
+.product-card .card-img-wrapper {
+    height: 200px; /* Ajusta la altura de la imagen para que tenga un tamaño uniforme */
+    overflow: hidden;
+}
+
+.product-card .card-img-wrapper img {
+    object-fit: cover; /* Mantiene la proporción de la imagen sin deformarla */
+    width: 100%;
+    height: 100%;
+}
+
+.product-card .card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.product-card .price-tag {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.product-card .badge.bg-success {
+    font-size: 0.9rem;
+}
+
+.product-card .badge.bg-danger {
+    font-size: 0.9rem;
+}
+
+.category-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 1;
+}
+
+.category-product {
+    background-color: rgba(13, 110, 253, 0.9);
+    color: white;
+}
+
+.price-tag {
+    background: #1e3c72;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

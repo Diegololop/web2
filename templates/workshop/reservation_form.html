@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% load humanize %}
+
+{% block title %}{{ action }} Reserva{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Formulario principal -->
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">{{ action }} Reserva</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="reservationForm">
+                        {% csrf_token %}
+                        
+                        {% if user.is_authenticated %}
+                            {% if user.is_superuser or user.userprofile.role in 'admin,receptionist' %}
+                                <!-- Cliente (solo para admin/recepcionista) -->
+                                <div class="mb-4">
+                                    <label for="{{ form.client.id_for_label }}" class="form-label">Cliente*</label>
+                                    {% render_field form.client class="form-control" %}
+                                    {% if form.client.errors %}
+                                        <div class="text-danger">{{ form.client.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <!-- Campos para cliente no registrado -->
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Como no has iniciado sesión, necesitamos algunos datos adicionales.
+                                Si ya tienes una cuenta, puedes <a href="{% url 'login' %}">iniciar sesión aquí</a>.
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre*</label>
+                                    <input type="text" name="first_name" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Apellido*</label>
+                                    <input type="text" name="last_name" class="form-control" required>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email*</label>
+                                    <input type="email" name="email" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Teléfono*</label>
+                                    <input type="tel" name="phone" class="form-control" placeholder="+56 9 XXXX XXXX" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">RUT*</label>
+                                <input type="text" name="rut" class="form-control" placeholder="XX.XXX.XXX-X" required>
+                                <div class="form-text">Formato: XX.XXX.XXX-X</div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Servicios -->
+                        <div class="mb-4">
+                            <label class="form-label">Servicios Disponibles*</label>
+                            <div class="row g-3">
+                                {% for service in services %}
+                                    <div class="col-md-6">
+                                        <div class="card h-100 service-card" id="service-card-{{ service.id }}">
+                                            {% if service.image %}
+                                                <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}" 
+                                                     style="height: 150px; object-fit: cover;">
+                                            {% endif %}
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ service.name }}</h5>
+                                                <p class="card-text">{{ service.description }}</p>
+                                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                                    <span class="badge bg-primary">${{ service.price|floatformat:0|intcomma }}</span>
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-clock"></i> {{ service.duration }} min
+                                                    </span>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-primary w-100 service-btn" 
+                                                        id="btn-service-{{ service.id }}"
+                                                        onclick="toggleService({{ service.id }}, '{{ service.name }}', {{ service.duration }}, {{ service.price }})">
+                                                    <i class="fas fa-plus me-2"></i>Seleccionar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if user.is_authenticated and user.is_superuser or user.userprofile.role in 'admin,receptionist' %}
+                                {% render_field form.services class="d-none" id="servicesInput" multiple="multiple" %}
+                            {% else %}
+                                <input type="hidden" name="services" id="servicesInput" value="">
+                            {% endif %}
+                        </div>
+
+                        <!-- Fecha y Hora -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha*</label>
+                                <input type="date" name="date" id="dateInput" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hora*</label>
+                                <input type="time" name="time" id="timeInput" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-4">
+                            <label class="form-label">Descripción</label>
+                            <textarea name="description" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        {% if reservation and user.is_authenticated and user.is_superuser or user.userprofile.role in 'admin,receptionist' %}
+                            <div class="mb-4">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">Estado</label>
+                                {% render_field form.status class="form-control" %}
+                                {% if form.status.errors %}
+                                    <div class="text-danger">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if user.is_authenticated and user.is_superuser or user.userprofile.role in 'admin,receptionist' %}{% url 'reservation_list' %}{% else %}{% url 'home' %}{% endif %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ action }} Reserva
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen lateral -->
+        <div class="col-md-4">
+            <div class="card shadow sticky-top" style="top: 1rem;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Servicios Seleccionados
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="selectedServicesList" class="list-group list-group-flush">
+                        <!-- Los servicios seleccionados se mostrarán aquí -->
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Duración Total:</span>
+                        <strong id="totalDuration">0 minutos</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Precio Total:</span>
+                        <strong id="totalPrice">$0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedServices = new Set();
+
+function toggleService(id, name, duration, price) {
+    const btn = document.querySelector(`#btn-service-${id}`);
+    const card = document.querySelector(`#service-card-${id}`);
+    
+    if (selectedServices.has(id)) {
+        selectedServices.delete(id);
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline-primary');
+        btn.innerHTML = '<i class="fas fa-plus me-2"></i>Seleccionar';
+        card.classList.remove('selected');
+        document.getElementById(`selected-service-${id}`)?.remove();
+    } else {
+        selectedServices.add(id);
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-primary');
+        btn.innerHTML = '<i class="fas fa-check me-2"></i>Seleccionado';
+        card.classList.add('selected');
+        
+        const serviceHtml = `
+            <div class="list-group-item" id="selected-service-${id}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">${name}</h6>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>${duration} min
+                            <span class="ms-2">$${price.toLocaleString()}</span>
+                        </small>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm" 
+                            onclick="toggleService(${id}, '${name}', ${duration}, ${price})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('selectedServicesList').insertAdjacentHTML('beforeend', serviceHtml);
+    }
+    
+    updateServicesInput();
+    updateTotals();
+}
+
+function updateServicesInput() {
+    const input = document.getElementById('servicesInput');
+    if (input.type === 'hidden') {
+        input.value = Array.from(selectedServices).join(',');
+    } else {
+        Array.from(input.options).forEach(option => {
+            option.selected = selectedServices.has(parseInt(option.value));
+        });
+    }
+}
+
+function updateTotals() {
+    let totalDuration = 0;
+    let totalPrice = 0;
+    
+    selectedServices.forEach(id => {
+        const btn = document.querySelector(`#btn-service-${id}`);
+        const onclick = btn.getAttribute('onclick');
+        const matches = onclick.match(/toggleService\((\d+),\s*'[^']*',\s*(\d+),\s*(\d+)\)/);
+        if (matches) {
+            totalDuration += parseInt(matches[2]);
+            totalPrice += parseInt(matches[3]);
+        }
+    });
+    
+    document.getElementById('totalDuration').textContent = `${totalDuration} minutos`;
+    document.getElementById('totalPrice').textContent = `$${totalPrice.toLocaleString()}`;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar fecha mínima como hoy
+    const dateInput = document.getElementById('dateInput');
+    const timeInput = document.getElementById('timeInput');
+    
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        dateInput.value = dateInput.value || today;
+    }
+    
+    if (timeInput) {
+        timeInput.min = '09:00';
+        timeInput.max = '18:00';
+        timeInput.value = timeInput.value || '09:00';
+    }
+
+    // Preseleccionar servicios si estamos editando
+    {% if form.instance.id %}
+        {% for service in form.instance.services.all %}
+            toggleService({{ service.id }}, '{{ service.name }}', {{ service.duration }}, {{ service.price }});
+        {% endfor %}
+    {% endif %}
+
+    // Validación del formulario
+    const form = document.getElementById('reservationForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (selectedServices.size === 0) {
+                e.preventDefault();
+                alert('Por favor seleccione al menos un servicio');
+                return;
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.service-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.service-card.selected {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.sticky-top {
+    z-index: 100;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock %}
